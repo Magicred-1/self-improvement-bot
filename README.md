@@ -19,6 +19,14 @@ It will also give you a random quote from Andrew Tate and other inspirationnal p
 If you want to use the bot on your own server, you will need to create a Discord bot and add it to your server.
 Here is a tutorial on how to do it: [writebots_website](https://www.writebots.com/discord-bot-token/) or [youtube_video](https://www.youtube.com/watch?v=SPTfmiYiuok)
 
+OR you can use Docker to run the bot by following the instructions below :
+
+1. Installing Docker : [docker_website](https://docs.docker.com/get-docker/)
+2. Clone this repository
+3. Launch the Dockerfile with `docker build -t self-improvement-bot .`
+4. Run the Dockerfile with `docker run -d self-improvement-bot`
+5. Enjoy !
+
 # Commands.
 - `!get_started` to get all the commands available.
 - `!pushups ‹value>` add pushups to your total.
