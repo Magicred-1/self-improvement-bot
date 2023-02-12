@@ -1,5 +1,7 @@
 import os
+from discord.ext import commands
 import discord
+import random
 from dotenv import load_dotenv
 
 # Created by Djason Gadiou (Magicred1#3948) on Discord
@@ -7,7 +9,7 @@ from dotenv import load_dotenv
 # This bot is made to help you workout by counting your push ups, pull ups and squats
 # WIP : You we be able to add or remove points to other users (admin only)
 # WIP : You will be able to reset your score (admin only)
-# You will be able to see the leaderboard of the entire server.
+# WIP : You will be able to see the leaderboard of the entire server.
 
 # Leaderboard with 3 columns the number of push-ups / pull ups / squats done by each user
 leaderboard = {}
@@ -18,96 +20,95 @@ cumuled_leaderboard = {
     'squats': 0,
 }
 
+# List of quotes of Andrew Tate 
+quotes = {
+    1: "The hallmark of a real man is controlling himself, controlling his emotions, and acting appropriately regardless of how he feels.",
+    2: "Depression is not real. Feeling depressed is real. So, you can feel depressed, but you feel depressed and that is a natural, biological, evolutionary trigger for you to change something in your life.",
+    3: "You can do it",
+    4: "You are not a victim. You are a victor. You are a survivor. You are a warrior. You are a champion.",
+    5: "Don't being a brokie, don't some pushups and grind",
+    6: "Skinny little bitch - Cbum",
+}
+
+# To generate a random int for the selection of a quote in the dictionnary
+def generateRandomIntForQuote():
+    res = random.randint(1, len(quotes))
+    return res
+
+# Loads the token and the channel id from the .env file
 load_dotenv()
+TOKEN = os.getenv('token')
+CHANNEL = os.getenv('channel')
 
-token = os.getenv('token')
-
-client = discord.Client()
+client = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 @client.event
 async def on_ready():
-    # Prints the bot's name when it connects to Discord with a GIF of a workout
-    print(f'{client.user} has connected to Discord and he\'s here to make you workout !')
+    # Prints the bot's name
+    print(f'{client.user} has connected to Discord and he\'s here to make you workout !\nType !help pushup to see the list of commands !')
 
-@client.event
-async def on_message(message):
-    # Prevents the bot from replying to itself
-    if message.author == client.user:
-        return
-    
-    # Push-ups count as 1 point
-    if message.startswith('!pushup'):
-        await message.channel.send('How many push ups did you do ?')
-        if (message.author.name not in leaderboard):
-            leaderboard[message.author.name][0] = 0
-        leaderboard[message.author.name][0] += int(message.content[8:])
-        cumuled_leaderboard['pushups'] += int(message.content[8:])
-        await message.channel.send('{} did ' + message.content[8:] + ' push ups, keep going !'.format(message.author.name))
+@client.command()
+async def pushups(ctx, number_of_pushups: int):
+    # Adds the number of push-ups done by the user to the leaderboard
+    leaderboard[ctx.author.name] = leaderboard.get(ctx.author.name, {'pushups': 0, 'pullups': 0, 'squats': 0})
+    leaderboard[ctx.author.name]['pushups'] += number_of_pushups
+    cumuled_leaderboard['pushups'] += number_of_pushups
+    await ctx.send(f'{ctx.author.name} has done {number_of_pushups} push-ups !')
 
-    # Pull-ups count as 2 points
-    if message.startswith('!pullup'):
-        await message.channel.send('How many pull ups did you do ?')
-        if (message.author.name not in leaderboard):
-            leaderboard[message.author.name][1] = 0
-        leaderboard[message.author.name][1] += int(message.content[8:]) * 2
-        cumuled_leaderboard['pullups'] += int(message.content[8:]) * 2
-        await message.channel.send('{} did ' + message.content[8:] + ' pull ups, keep going !'.format(message.author.name))
+@client.command()
+async def pullups(ctx, number_of_pullups: int):
+    # Adds the number of pull-ups done by the user to the leaderboard
+    leaderboard[ctx.author.name] = leaderboard.get(ctx.author.name, {'pushups': 0, 'pullups': 0, 'squats': 0})
+    leaderboard[ctx.author.name]['pullups'] += number_of_pullups
+    cumuled_leaderboard['pullups'] += number_of_pullups * 2
+    await ctx.send(f'{ctx.author.name} has done {number_of_pullups} pull-ups !')
 
-    # 5 Squats count as 1 point
-    if message.startswith('!squats'):
-        await message.channel.send('How many squats did you do ?')
-        if (message.author.name not in leaderboard):
-            leaderboard[message.author.name][2] = 0
-        leaderboard[message.author.name][2] += int(message.content[8:]) / 5
-        cumuled_leaderboard['squats'] += int(message.content[8:]) / 5
-        await message.channel.send('{} did ' + message.content[8:] + ' squats, keep going !'.format(message.author.name))
+@client.command()
+async def squats(ctx, number_of_squats: int):
+    # Adds the number of squats done by the user to the leaderboard
+    leaderboard[ctx.author.name] = leaderboard.get(ctx.author.name, {'pushups': 0, 'pullups': 0, 'squats': 0})
+    leaderboard[ctx.author.name]['squats'] += number_of_squats
+    cumuled_leaderboard['squats'] += number_of_squats / 5
+    await ctx.send(f'{ctx.author.name} has done {number_of_squats} squats, keep going !')
 
-    # Leaderboard command => shows the culmulated score of entire server
-    if message.startswith('!leaderboard'):
-        await message.channel.send('Here\'s the leaderboard :')
-        for items in cumuled_leaderboard:
-            await message.channel.send(items)
+@client.command()
+async def score(ctx):
+    # Sends the user's score to the channel
+    if ctx.author.name in leaderboard:
+        await ctx.send(f'{ctx.author.name} has done {leaderboard[ctx.author.name]["pushups"]} push-ups, {leaderboard[ctx.author.name]["pullups"]} pull-ups and {leaderboard[ctx.author.name]["squats"]} squats !\nTotal score : {cumuled_leaderboard["pushups"] + cumuled_leaderboard["pullups"] + cumuled_leaderboard["squats"]}')
+    else:
+        await ctx.send(f'{ctx.author.name} has not done any workout yet ! Do some push-ups, pull-ups and squats to get started !')
 
-    # Help commands
-    if message.startswith('!help pushup'):
-        await message.channel.send('Here\'s the list of commands :\n!pushup [number of push ups] : adds the number of push ups to your score\n!pullup [number of pull ups] : adds the number of pull ups to your score\n!squats [number of squats] : adds the number of squats to your score\n!leaderboard : shows the leaderboard\n!help pushup : shows the push up commands\n!admin help : shows the admin commands')
+@client.command()
+async def get_started(ctx):
+    # Sends the help message to the channel
+    await ctx.send('**__Getting Started :__**\n**!score** : Shows your score\n**!pushups <number>** : Adds the number of push-ups you have done to your score\n**!pullups <number>** : Adds the number of pull-ups you have done to your score\n**!squats <number>** : Adds the number of squats you have done to your score\n**!leaderboard** : Shows the leaderboard of the server')
 
-    # Admin commands
-    if message.startswith('!admin help'):
-        if (message.author.top_role.permissions.administrator == True):
-            await message.channel.send('Here\'s the list of admin commands :\n!admin add [name] [push ups] [pull ups] [squats] : adds the number of push ups, pull ups and squats to the user\'s score\n!admin remove [name] [push ups] [pull ups] [squats] : removes the number of push ups, pull ups and squats to the user\'s score\n!admin reset [name] : resets the user\'s score')
-        else:
-            await message.channel.send('{} you don\'t have the permission to use this command ! DO SOME PUSH UPS !'.format(message.author.name))
+@client.command()
+async def quote(ctx):
+    # Sends one random quote from Andrew Tate to the channel
+    await ctx.send(f':muscle: **__Quote of the day :__** :muscle:\n{quotes[generateRandomIntForQuote()]}')
 
-    # Admin add command
-    if message.startswith('!admin add'):
-        if (message.author.top_role.permissions.administrator == True):
-            if (message.content[11:] not in leaderboard):
-                leaderboard[message.content[11:]] = [0, 0, 0]
-            leaderboard[message.content[11:]][0] += int(message.content[13:])
-            leaderboard[message.content[11:]][1] += int(message.content[15:]) * 2
-            leaderboard[message.content[11:]][2] += int(message.content[17:]) / 5
-            await message.channel.send('You added ' + message.content[13:] + ' push ups, ' + message.content[15:] + ' pull ups and ' + message.content[17:] + ' squats to ' + message.content[11:] + '\'s score !')
-        else:
-            await message.channel.send('{} you don\'t have the permission to use this command ! DO SOME PUSH UPS !'.format(message.author.name))
+# Admin only commands
 
-    # Admin remove command
-    if message.startswith('!admin remove'):
-        if (message.author.top_role.permissions.administrator == True):
-            if (message.content[14:] not in leaderboard):
-                leaderboard[message.content[14:]] = [0, 0, 0]
-            leaderboard[message.content[14:]][0] -= int(message.content[16:])
-            leaderboard[message.content[14:]][1] -= int(message.content[18:]) * 2
-            leaderboard[message.content[14:]][2] -= int(message.content[20:]) / 5
-            await message.channel.send('You removed ' + message.content[16:] + ' push ups, ' + message.content[18:] + ' pull ups and ' + message.content[20:] + ' squats to ' + message.content[14:] + '\'s score !')
-        else:
-            await message.channel.send('{} you don\'t have the permission to use this command ! DO SOME PUSH UPS !'.format(message.author.name))
+# Reset the points of a user
+@client.command()
+async def reset_points(ctx):
+    # Resets the user's score to 0
+    # Prompt the user to confirm the reset
+    await ctx.send(f'Are you sure you want to reset your score ? (y/n)')
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+    msg = await client.wait_for('message', check=check)
+    if msg.content == 'y':
+            if ctx.author.guild_permissions.administrator:
+                leaderboard[ctx.author.name] = {'pushups': 0, 'pullups': 0, 'squats': 0}
+                await ctx.send(f'{ctx.author.name} has reset his score !')
+            else:
+                await ctx.send(f'{ctx.author.name} is not an admin ! Only admins can reset their score !')
+    else:
+        await ctx.send(f'The score of {ctx.author.name} has not been reset !')
 
-    # Admin reset command
-    if message.startswith('!admin reset'):
-        if (message.author.top_role.permissions.administrator == True):
-            message.channel.send('WIP : Soon !')
-        else:
-            await message.channel.send('{} you don\'t have the permission to use this command ! DO SOME PUSH UPS !'.format(message.author.name))
-    
-client.run(token)
+# Reset the
+
+client.run(TOKEN)
