@@ -4,7 +4,7 @@
 
 **Discord: Magicred1#3948**
 
-This is a simple bot that will help you to improve yourself. It will send you a message every day with a new task to do. You can also add your own tasks.
+This is a simple bot that will help you to improve yourself. It will help you to keep track of your progress and motivate you to do more. It will also give you a random quote from Andrew Tate and other inspirationnal people to keep you motivated and help you to improve yourself.
 
 ## How to set up and use it ?
 
