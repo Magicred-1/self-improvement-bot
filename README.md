@@ -25,6 +25,8 @@ OR you can use Docker to run the bot by following the instructions below :
 2. Clone this repository
 3. Launch the Dockerfile with `docker build -t self-improvement-bot .`
 4. Run the Dockerfile with `docker run -d self-improvement-bot`
+5. Rename the file `.env.example` to `.env`
+6. Add your discord **bot token** in the `.env` file and the **channel id** where you want the bot to send the messages. By using those commands `sed -i 's/token=.*/token=**NEW_TOKEN_VALUE**/' .env && sed -i 's/channel_id=.*/channel_id=**YOUR_CHANNEL_ID**/' .env` in the terminal from folder where the bot is located.
 5. Enjoy !
 
 # Commands.

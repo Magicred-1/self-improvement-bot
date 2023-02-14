@@ -28,3 +28,5 @@
     28: "The future belongs to those who believe in the beauty of their dreams. - Eleanor Roosevelt",
     29: "Don't wait for opportunities, create them. - Charles R. Swindoll",
     30: "Take the risk or lose the chance. - Unknown",
+    31: "The best revenge is massive success. - Frank Sinatra",
+    32: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle. As with all matters of the heart, you'll know when you find it. - Steve Jobs",

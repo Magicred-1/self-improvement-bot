@@ -1,0 +1,33 @@
+{
+    "TOP G OF MONTH": {
+        "username": "Magicred1",
+        "date": {
+            "day": 13,
+            "month": 2,
+            "year": 2023
+        }
+    },
+    "Admin": {
+        "pushups": 1000,
+        "squats": 0,
+        "pullups": 23
+    },
+    "endeavour": {
+        "pushups": 45,
+        "squats": 60,
+        "pullups": 33
+    },
+    "Dr.  Legat \u0642\u0631\u06d5 \u0622\u0642 \u0628\u0627\u0628\u0627": {
+        "pushups": 100000000000
+    },
+    "Mister": {
+        "pushups": 20,
+        "squats": 0,
+        "pullups": 0
+    },
+    "Mister2": {
+        "pushups": 30,
+        "squats": 0,
+        "pullups": 0
+    }
+}
