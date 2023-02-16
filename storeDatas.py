@@ -1,20 +1,26 @@
 import json
 import os
 import datetime
-import calendar as cal
+
+FILE_SOURCE = "./leaderboard.json"
+
 
 def initLeaderboard():
     # Create a new leaderboard file
-    if not os.path.exists('leaderboard.json') and os.path.getsize('leaderboard.json') == 0:    
+    if (
+        not os.path.exists("./leaderboard.json")
+        and os.path.getsize("./leaderboard.json") == 0
+    ):
         leaderboard = {}
-        with open('leaderboard.json', 'w') as f:
+        with open("./leaderboard.json", "w") as f:
             json.dump(leaderboard, f, indent=4)
     else:
         return
 
+
 def updateLeaderboard(username, exercise, value):
     # Update the leaderboard with the new value
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         if username in leaderboard:
             if exercise in leaderboard[username]:
@@ -23,27 +29,30 @@ def updateLeaderboard(username, exercise, value):
                 leaderboard[username][exercise] = value
         else:
             leaderboard[username] = {exercise: value}
-    with open('leaderboard.json', 'w') as f:
+    with open("./leaderboard.json", "w") as f:
         json.dump(leaderboard, f, indent=4)
+
 
 def deleteUserLeaderboard(username):
     # Delete the user from the leaderboard
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         if username in leaderboard:
             del leaderboard[username]
-    with open('leaderboard.json', 'w') as f:
+    with open("./leaderboard.json", "w") as f:
         json.dump(leaderboard, f, indent=4)
+
 
 def getLeaderboard():
     # Get the leaderboard
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
     return leaderboard
 
+
 def getUserScore(username):
     # Get the score of a user
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         if username in leaderboard:
             pushups = 0
@@ -59,12 +68,13 @@ def getUserScore(username):
         else:
             return 0
 
+
 def getCumuledScore(user):
     # Get the cumuled score of all users in the leaderboard
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         cumuledScore = 0
-        #pushups count for 1 point / Pullups count for 2 points / Squats count for 1 per 5 squats
+        # pushups count for 1 point / Pullups count for 2 points / Squats count for 1 per 5 squats
         for user in leaderboard:
             if "pushups" in leaderboard[user] != 0:
                 cumuledScore += leaderboard[user]["pushups"]
@@ -76,9 +86,10 @@ def getCumuledScore(user):
             cumuledScore += 0
     return cumuledScore
 
+
 def getTotalScore():
     # Get the total score of all users in the leaderboard
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         totalScore = 0
         for user in leaderboard:
@@ -87,36 +98,54 @@ def getTotalScore():
             totalScore += 0
     return totalScore
 
+
 def getTheTopG():
     # Get the username of the TOP_G_OF_THE_MONTH
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
-        if "TOP G OF MONTH" in leaderboard:
-            topG = leaderboard["TOP G OF MONTH"]["username"]
+        if (
+            "TOP_G_OF_MONTH" in leaderboard
+            and "username" in leaderboard["TOP_G_OF_MONTH"] == True
+        ):
+            topG = leaderboard["TOP_G_OF_MONTH"]["username"]
         else:
             topG = "The TOP_G_OF_THE_MONTH is not set yet."
     return topG
+
 
 def setTheTopG(username):
     current_day = datetime.datetime.now().date().day
     current_month = datetime.datetime.now().date().month
     current_year = datetime.datetime.now().date().year
 
-    with open('leaderboard.json', 'r') as f:
+    with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
-        if "TOP G OF MONTH" in leaderboard:
-            if current_month :
-                leaderboard["TOP G OF MONTH"] = {"username": username, "date": {"day": current_day, "month": current_month, "year": current_year}}
+        if "TOP_G_OF_MONTH" in leaderboard:
+            if current_month:
+                leaderboard["TOP_G_OF_MONTH"] = {
+                    "username": username,
+                    "date": {
+                        "day": current_day,
+                        "month": current_month,
+                        "year": current_year,
+                    },
+                }
             else:
-                leaderboard["TOP G OF MONTH"]["username"] = username
-                leaderboard["TOP G OF MONTH"]["date"]["day"] = current_day
-                leaderboard["TOP G OF MONTH"]["date"]["month"] = current_month
-                leaderboard["TOP G OF MONTH"]["date"]["year"] = current_year
+                leaderboard["TOP_G_OF_MONTH"]["username"] = username
+                leaderboard["TOP_G_OF_MONTH"]["date"]["day"] = current_day
+                leaderboard["TOP_G_OF_MONTH"]["date"]["month"] = current_month
+                leaderboard["TOP_G_OF_MONTH"]["date"]["year"] = current_year
         else:
-            leaderboard["TOP G OF MONTH"] = {"username": username, "date": {"day": current_day, "month": current_month, "year": current_year}}
-    with open('leaderboard.json', 'w') as f:
+            leaderboard["TOP_G_OF_MONTH"] = {
+                "username": username,
+                "date": {
+                    "day": current_day,
+                    "month": current_month,
+                    "year": current_year,
+                },
+            }
+    with open("./leaderboard.json", "w") as f:
         json.dump(leaderboard, f, indent=4)
 
-setTheTopG("Magicred1")
 
 initLeaderboard()
