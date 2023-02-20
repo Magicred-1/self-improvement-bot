@@ -23,16 +23,14 @@ OR you can use Docker to run the bot by following the instructions below :
 
 1. Installing Docker : [docker_website](https://docs.docker.com/get-docker/)
 2. Clone this repository
-3. Launch the Dockerfile with `docker build -t self-improvement-bot .`
+3. Run the Dockerfile with `docker build --build-arg token=<your_token> --build-arg channel_id=<your_channel_id> -t self-improvement-bot`.
 4. Run the Dockerfile with `docker run -d self-improvement-bot`
-5. Rename the file `.env.example` to `.env`
-6. Add your discord **bot token** in the `.env` file and the **channel id** where you want the bot to send the messages. By using those commands `sed -i 's/token=.*/token=**NEW_TOKEN_VALUE**/' .env && sed -i 's/channel_id=.*/channel_id=**YOUR_CHANNEL_ID**/' .env` in the terminal from folder where the bot is located.
 5. Enjoy !
 
 # Logs Storage
 
 The bot will create a folder named `logs` in the folder where the bot is located.
-It will store all the logs in a file named with the format `YYYY-MM-DD-DiscordIDServer.log` in the folder `logs`.
+It will store all the logs (with commands that have been used) in a file named with the format `YYYY-MM-DD-DiscordIDServer.log` in the folder `logs`.
 For example, the file `2021-01-01-123456789012345678.log` will contain all the logs of the server with the ID `123456789012345678` on the 1st of January 2021.
 
 # Cooldown 
