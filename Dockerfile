@@ -1,20 +1,16 @@
 FROM ubuntu:latest
 
-LABEL version="1.0" \
-      description="Dockerfile for self-improvement-bot" \
-MAINTAINER "Djason Gadiou (djasongadiou@gmail.com)"
-
-RUN apt-get update \
-    apt-get install -y python3 python3-pip git \
-    pip3 install --upgrade pip
+RUN apt-get update && apt-get install python3-pip git -y
 
 RUN mkdir /app
 
+RUN cd /app
+
 RUN git clone https://github.com/Magicred-1/self-improvement-bot
 
-WORKDIR /app/self-improvement-bot
+WORKDIR /self-improvement-bot
 
-RUN mv .env.example .env
+RUN mv ./.env.example ./.env
 
 RUN pip3 install -r requirements.txt
 

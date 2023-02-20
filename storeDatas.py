@@ -4,24 +4,49 @@ import datetime
 
 FILE_SOURCE = "./leaderboard.json"
 
-
 def initLeaderboard():
-    # Create a new leaderboard file
-    if (
-        not os.path.exists("./leaderboard.json")
-        and os.path.getsize("./leaderboard.json") == 0
-    ):
-        leaderboard = {}
-        with open("./leaderboard.json", "w") as f:
-            json.dump(leaderboard, f, indent=4)
-    else:
-        return
+    # Create a new leaderboard file and create the user TOP_G_OF_THE_MONTH & Admin user if the leaderboard file is empty
+    if os.path.exists(FILE_SOURCE) == False:
+        with open(FILE_SOURCE, "w") as f:
+            json.dump({}, f)
+    with open(FILE_SOURCE, "r") as f:
+        leaderboard = json.load(f)
+        if "TOP_G_OF_MONTH" not in leaderboard:
+            leaderboard["TOP_G_OF_MONTH"] = {
+                "username": "",
+                "date": {"day": 0, "month": 0, "year": 0},
+            }
+        if "Admin" not in leaderboard:
+            leaderboard["Admin"] = {"pushups": 0, "pullups": 0, "squats": 0}
+    with open(FILE_SOURCE, "w") as f:
+        json.dump(leaderboard, f, indent=4)
+
+
+def initUserScore(username):
+    # Create a new user in the leaderboard if the user is not in the leaderboard
+    with open("./leaderboard.json", "r") as f:
+        leaderboard = json.load(f)
+        if username not in leaderboard:
+            leaderboard[username] = {"pushups": 0, "pullups": 0, "squats": 0}
+        else:
+            if "pushups" not in leaderboard[username]:
+                leaderboard[username]["pushups"] = 0
+            if "pullups" not in leaderboard[username]:
+                leaderboard[username]["pullups"] = 0
+            if "squats" not in leaderboard[username]:
+                leaderboard[username]["squats"] = 0
+    with open("./leaderboard.json", "w") as f:
+        json.dump(leaderboard, f, indent=4)
 
 
 def updateLeaderboard(username, exercise, value):
-    # Update the leaderboard with the new value
+# Update the leaderboard with the new value the rest of exercises will be 0
+
+    initUserScore(username)
+
     with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
+
         if username in leaderboard:
             if exercise in leaderboard[username]:
                 leaderboard[username][exercise] += value
@@ -67,24 +92,6 @@ def getUserScore(username):
             return pushups + pullups * 2 + squats // 5
         else:
             return 0
-
-
-def getCumuledScore(user):
-    # Get the cumuled score of all users in the leaderboard
-    with open("./leaderboard.json", "r") as f:
-        leaderboard = json.load(f)
-        cumuledScore = 0
-        # pushups count for 1 point / Pullups count for 2 points / Squats count for 1 per 5 squats
-        for user in leaderboard:
-            if "pushups" in leaderboard[user] != 0:
-                cumuledScore += leaderboard[user]["pushups"]
-            if "pullups" in leaderboard[user] != 0:
-                cumuledScore += leaderboard[user]["pullups"] * 2
-            if "squats" in leaderboard[user] != 0:
-                cumuledScore += leaderboard[user]["squats"] // 5
-        else:
-            cumuledScore += 0
-    return cumuledScore
 
 
 def getTotalScore():

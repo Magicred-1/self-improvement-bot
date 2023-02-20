@@ -6,7 +6,6 @@ from quotesHandler import getQuote
 from quotesHandler import generateRandomIntForQuote
 from dotenv import load_dotenv
 
-
 # Created by Djason Gadiou (Magicred1#3948) on Discord
 # Github : https://github.com/Magicred-1/self-improvement-bot
 # This bot is made to help you workout by counting your push ups, pull ups and squats
@@ -26,9 +25,51 @@ load_dotenv()
 TOKEN = os.getenv("token")
 CHANNEL = os.getenv("channel")
 
-client = commands.Bot(command_prefix="!", intents=discord.Intents.all())
+COOLDOWN = 10  # Cooldown for the commands in seconds
 
-user = username = client.get_user(273544904087699457)
+initLeaderboard()
+
+
+client = commands.Bot(command_prefix="!", intents=discord.Intents.all())  # The bot's prefix is "!" to call a command
+
+# Bot commands logs and error handling
+@client.event
+async def on_command(ctx):
+    date = datetime.datetime.now().strftime("%d-%m-%Y")
+    discordServerID = ctx.guild.id
+
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    logs_file = open(f"./logs/{date}-{discordServerID}.logs", "a")
+    logs_file.write(
+            f"{ctx.author} has used the command {ctx.message.content} in {ctx.channel} at {ctx.message.created_at}.\n"
+        )
+    logs_file.close()
+
+# Error handling
+@client.event
+async def on_command_error(ctx, error):
+    # If the command doesn't exist, we send this message
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send(
+                ":x: This command doesn't exist, nice try .. :x:"
+            )
+    # If the user is on cooldown, we send this message
+    elif isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(
+                f"Not too quick Gym Rat ! Wait {round(error.retry_after, 2)} seconds before using this command again ! :moyai:"
+            )
+    # If the user doesn't have the permissions to use this command, we send this message
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send(
+                f":x: You don't have the permissions to use this command ! :x:"
+        )
+    # If the user send a message in the wrong channel
+    elif isinstance(error, commands.CheckFailure):
+        await ctx.send(
+                f":x: You can't use this command in this channel ! :x:"
+        )
 
 
 @client.event
@@ -40,6 +81,7 @@ async def on_ready():
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def pushups(ctx, number_of_pushups: int = 0):
     if ctx.channel.id == int(CHANNEL):
         # Adds the number of push-ups done by the user to the leaderboard
@@ -62,6 +104,7 @@ async def pushups(ctx, number_of_pushups: int = 0):
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def pullups(ctx, number_of_pullups: int = 0):
     if ctx.channel.id == int(CHANNEL):
         # Adds the number of pull-ups done by the user to the leaderboard
@@ -84,6 +127,7 @@ async def pullups(ctx, number_of_pullups: int = 0):
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def squats(ctx, number_of_squats: int = 0):
     if ctx.channel.id == int(CHANNEL):
         # We divide the number of squats by 5 because it's easier to do 5 squats than 1 push-up
@@ -104,60 +148,60 @@ async def squats(ctx, number_of_squats: int = 0):
             error.set_author(name=f"{ctx.author.name}")
             return await ctx.send(embed=error)
 
-
 @client.command()
-async def score(ctx):
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+async def score(ctx, username: str = None):
     if ctx.channel.id == int(CHANNEL):
+        if username is None:
+            username = ctx.author.name
+        
+        leaderboard = getLeaderboard()
+
         # Sends the user's score to the channel
         score_window = discord.Embed(
-            title=":muscle: **__Your score__** :muscle:",
+            title=":stars: **__Your score__** :stars:",
             description="**Reminder :**\n1 push-up = **1 point** / 1 pull-up = **2 points** / 5 squats = **1 point**",
-            color=discord.Colour.dark_red(),
+            color=discord.Colour.random(),
         )
-        leaderboard = getLeaderboard()
-        for user in leaderboard:
-            if user == ctx.author.name and getUserScore(user) > 0:
-                score_window.set_author(name=f"{ctx.author.name}")
-                score_window.add_field(
-                    name=f"{user}'s push-ups :",
-                    value=f'{leaderboard[user]["pushups"]} points',
-                    inline=False,
-                )
-                score_window.add_field(
-                    name=f"{user}'s pull-ups :",
-                    value=f'{leaderboard[user]["pullups"]} points',
-                    inline=False,
-                )
-                score_window.add_field(
-                    name=f"{user}'s squats :",
-                    value=f'{leaderboard[user]["squats"]} points',
-                    inline=False,
-                )
-                score_window.add_field(
-                    name=f"{user}'s total score :",
-                    value=f"{getUserScore(user)} points",
-                    inline=False,
-                )
-                score_window.set_image(
-                    url="https://media.tenor.com/BrHJBHqAxWAAAAAM/andrew-tate-top-g.gif"
-                )
-                return await ctx.send(embed=score_window)
-        else:
-            score_window.title = f"Your score is {0} ... Brookie !".format(
-                getUserScore(user)
+        score_window.set_author(name=f"{username}")
+        score_window.set_thumbnail(
+            url="https://media.tenor.com/BrHJBHqAxWAAAAAM/andrew-tate-top-g.gif"
+        )
+        
+        # If the user is in the leaderboard and has done at least one exercise
+
+        if username in leaderboard and getUserScore(username) > 0:
+            score_window.add_field(
+                name="**:hand_splayed: Push-ups : :hand_splayed:**",
+                value=f"{leaderboard[username]['pushups']} push-ups",
+                inline=True,
             )
             score_window.add_field(
-                name="*Nothing to see ..*",
-                value=f"{ctx.author.name} has not done any workout yet ! \nDo some push-ups, pull-ups and squats to get started !\nYou brookie !",
+                name="**:muscle: Pull-ups : :muscle:**",
+                value=f"{leaderboard[username]['pullups']} pull-ups",
+                inline=True,
+            )
+            score_window.add_field(
+                name="**:leg: Squats : :leg:**",
+                value=f"{leaderboard[username]['squats']} squats",
+                inline=True,
+            )
+            score_window.add_field(
+                name="**Total :**",
+                value=f"{leaderboard[username]['pushups'] + leaderboard[username]['pullups'] + leaderboard[username]['squats']} points",
                 inline=False,
             )
-            score_window.set_image(
-                url="https://media.tenor.com/uIhsR71l6HkAAAAC/dosomepushupsfinlaim.gif"
+            await ctx.send(embed=score_window)
+        else:
+            score_window.add_field(
+                name="You did no exercises ..", value="Your score is **0**, Brookie !\nHealth is Wealth use the command **__!get_started__** to start your journey !", inline=True
             )
-            return await ctx.send(embed=score_window)
+            await ctx.send(embed=score_window)
+
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def get_started(ctx):
     if ctx.channel.id == int(CHANNEL):
         # Sends the help message to the channel
@@ -209,13 +253,14 @@ async def get_started(ctx):
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def quote(ctx):
     if ctx.channel.id == int(CHANNEL):
         # Sends one random quote from Andrew Tate to the channel
         andrewGIF = discord.Embed(
             title="Andrew Tate - The Top G",
             description="Quotes from Andrew Tate and more ...",
-            color=discord.Colour.blue(),
+            color=discord.Colour.random(),
         )
         andrewGIF.add_field(
             name="**Quote of the day :**",
@@ -229,23 +274,24 @@ async def quote(ctx):
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def leaderboard(ctx):  # Shows the leaderboard
     if ctx.channel.id == int(CHANNEL):
         # Sends the leaderboard to the channel
         numberUser = 0
         if len(getLeaderboard()) == 0:
             return await ctx.send(
-                "No one has done any workout yet ! Do some push-ups, pull-ups and squats to get started !"
+                ":x: No one has done any workout yet ! Do some push-ups, pull-ups and squats to get started ! :x:"
             )
         else:
             ranking_embed = discord.Embed(
                 title=":moyai: **__Leaderboard - TOP 10 only__** :moyai:",
                 description="**Reminder :**\n1 push-up = **1 point** / 1 pull-up = **2 points** / 5 squats = **1 point**",
-                color=discord.Colour.dark_red(),
+                color=discord.Colour.random(),
             )
             leaderboard = getLeaderboard()
             ranking_embed.add_field(
-                name="**__Discord Cumulated Score :__**",
+                name="**__Discord Server Cumulated Score :__**",
                 value=f"{getTotalScore()} points",
                 inline=False,
             )
@@ -253,10 +299,11 @@ async def leaderboard(ctx):  # Shows the leaderboard
             ranking_embed.set_image(
                 url="https://media.discordapp.net/attachments/553215505712807938/826206690399617044/finna-pnut.gif"
             )
-            # we use getTotalscore() to sort the leaderboard
+            # we use getUserScore() to sort the leaderboard by user's score
             foreachUser = sorted(
                 leaderboard, key=lambda x: getUserScore(x), reverse=True
             )
+            # we use the foreachUser list to get the user's score
             for user in foreachUser:
                 if user == "TOP_G_OF_MONTH" or user == "Admin":
                     continue
@@ -292,21 +339,23 @@ async def leaderboard(ctx):  # Shows the leaderboard
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def avatar(ctx):
     # Sends the avatar of the user who sent the message https://cdn.discordapp.com/avatars/..../{user_avatar}.png
     if ctx.channel.id == int(CHANNEL):
         avatar = discord.Embed(
-            color=discord.Colour.blue(), title=f"**__{ctx.author.name}'s Avatar :__**"
+            color=discord.Colour.random(), title=f"**__{ctx.author.name}'s Avatar :__**"
         )
         avatar.set_image(url=f"{ctx.author.avatar}.png")
         return await ctx.send(embed=avatar)
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def topG(ctx):
     top_g = getTheTopG()
     top_g_embed = discord.Embed(
-        title="TOP_G_OF_THE_MONTH :", color=discord.Colour.yellow()
+        title="TOP_G_OF_THE_MONTH :", color=discord.Colour.random()
     )
     top_g_embed.add_field(
         name=f":man_lifting_weights:{top_g}:man_lifting_weights:",
@@ -322,82 +371,79 @@ async def topG(ctx):
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+@commands.has_permissions(administrator=True)
 async def help_admin(ctx):
     if ctx.channel.id == int(CHANNEL):
         # Sends the help message to the channel
-        if not ctx.author.guild_permissions.administrator:
-            return await ctx.send("You are not an admin !")
-        else:
-            help = discord.Embed(
-                title="Admin commands available :", color=discord.Colour.blue()
-            )
-            help.add_field(
-                name="**!reset_points <user>**",
-                value="Resets the score of a user",
-                inline=False,
-            )
-            help.add_field(
-                name="**!add_points <user> <pushups> <pullups> <squats>**",
-                value="Adds points to a user",
-                inline=False,
-            )
-            help.add_field(
-                name="**!remove_points <user> <pushups> <pullups> <squats>**",
-                value="Removes points to a user",
-                inline=False,
-            )
-            help.add_field(
-                name="**!reset_leaderboard**",
-                value="Resets the leaderboard",
-                inline=False,
-            )
-            help.add_field(
-                name="**!setTopG <user>**",
-                value="Sets the TOP_G_OF_THE_MONTH",
-                inline=False,
-            )
-            help.add_field(
-                name="**!help_admin**",
-                value="Shows all the admin commands available.",
-                inline=False,
-            )
+        help = discord.Embed(
+            title="Admin commands available :", color=discord.Colour.random()
+        )
+        help.add_field(
+            name="**!reset_points <user>**",
+            value="Resets the score of a user",
+            inline=False,
+        )
+        help.add_field(
+            name="**!add_points <user> <pushups> <pullups> <squats>**",
+            value="Adds points to a user",
+            inline=False,
+        )
+        help.add_field(
+            name="**!remove_points <user> <pushups> <pullups> <squats>**",
+            value="Removes points to a user",
+            inline=False,
+        )
+        help.add_field(
+            name="**!reset_leaderboard**",
+            value="Resets the leaderboard",
+            inline=False,
+        )
+        help.add_field(
+            name="**!setTopG <user>**",
+            value="Sets the TOP_G_OF_THE_MONTH",
+            inline=False,
+        )
+        help.add_field(
+            name="**!help_admin**",
+            value="Shows all the admin commands available.",
+            inline=False,
+        )
 
-            return await ctx.send(embed=help)
+        return await ctx.send(embed=help)
 
 
 # Reset the points of a user
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+@commands.has_permissions(administrator=True)
 async def reset_points(ctx, reset_user_points: str = ""):
-    if ctx.author.guild_permissions.administrator:
+    if reset_user_points == "":
+        return await ctx.send(f"Please specify a user to reset the score of !")
 
-        if reset_user_points == "":
-            return await ctx.send(f"Please specify a user to reset the score of !")
-
-        if ctx.channel.id == int(CHANNEL):
-            # Prompt the user to confirm the reset
-            await ctx.send(
-                f"Are you sure you want to reset the score of {reset_user_points} ? (y/n)"
-            )
-
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
-
-            msg = await client.wait_for("message", check=check)
-            if msg.content == "y":
-                deleteUserLeaderboard(reset_user_points)
-                await ctx.send(f"{reset_user_points} score has been reset !")
-            else:
-                return await ctx.send(
-                    f"The score of {reset_user_points} has not been reset !"
-                )
-    else:
-        return await ctx.send(
-            f"{ctx.author.name} is not an admin ! Only admins can reset their score !"
+    if ctx.channel.id == int(CHANNEL):
+        # Prompt the user to confirm the reset
+        await ctx.send(
+            f"Are you sure you want to reset the score of {reset_user_points} ? (y/n)"
         )
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        msg = await client.wait_for("message", check=check)
+        if msg.content == "y":
+            deleteUserLeaderboard(reset_user_points)
+            await ctx.send(f"{reset_user_points} score has been reset !")
+        else:
+            return await ctx.send(
+                f"The score of {reset_user_points} has not been reset !"
+            )
 
 
 # Add points to a user
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+@commands.has_permissions(administrator=True)
 async def add_points(
     ctx,
     add_user_points: str = "",
@@ -405,116 +451,106 @@ async def add_points(
     add_pullups: int = 0,
     add_squats: int = 0,
 ):
-    if ctx.author.guild_permissions.administrator:
 
-        if add_user_points == "":
-            return await ctx.send(f"Please specify a user to add points to !")
+    if add_user_points == "":
+        return await ctx.send(f"Please specify a user to add points to !")
 
-        if ctx.channel.id == int(CHANNEL):
-            # Get the number of push-ups, pull-ups and squats to add or if null set it to 0
-            if add_pushups < 0:
-                add_pushups = 0
+    if ctx.channel.id == int(CHANNEL):
+        # Get the number of push-ups, pull-ups and squats to add or if null set it to 0
+        if add_pushups < 0:
+            add_pushups = 0
 
-            elif add_pullups < 0:
-                add_pullups = 0
+        elif add_pullups < 0:
+            add_pullups = 0
 
-            elif add_squats < 0:
-                add_squats = 0
+        elif add_squats < 0:
+            add_squats = 0
 
-            # Prompt the user to confirm the reset
-            await ctx.send(
-                f"Are you sure you want to add {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats to {add_user_points}'s score ? (y/n)"
-            )
-
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
-
-            msg = await client.wait_for("message", check=check)
-
-            if msg.content == "y":
-                leaderboard = getLeaderboard()
-                if add_user_points in leaderboard:
-                    # Add the points to the user in the leaderboard
-                    updateLeaderboard(add_user_points, "pushups", add_pushups)
-                    updateLeaderboard(add_user_points, "pullups", add_pullups)
-                    updateLeaderboard(add_user_points, "squats", add_squats)
-                    await ctx.send(
-                        f"{add_user_points} has been added {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats !"
-                    )
-                else:
-                    updateLeaderboard(add_user_points, "pushups", add_pushups)
-                    updateLeaderboard(add_user_points, "pullups", add_pullups)
-                    updateLeaderboard(add_user_points, "squats", add_squats)
-
-                    await ctx.send(
-                        f"{add_user_points} has been added to the leaderboard with {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats !"
-                    )
-    else:
-        return await ctx.send(
-            f"{add_user_points} is not an admin !\nOnly admins can add points to a user !"
+        # Prompt the user to confirm the reset
+        await ctx.send(
+            f"Are you sure you want to add {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats to {add_user_points}'s score ? (y/n)"
         )
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        msg = await client.wait_for("message", check=check)
+
+        if msg.content == "y":
+            leaderboard = getLeaderboard()
+            if add_user_points in leaderboard:
+                # Add the points to the user in the leaderboard
+                updateLeaderboard(add_user_points, "pushups", add_pushups)
+                updateLeaderboard(add_user_points, "pullups", add_pullups)
+                updateLeaderboard(add_user_points, "squats", add_squats)
+                await ctx.send(
+                    f"{add_user_points} has been added {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats !"
+                )
+            else:
+                updateLeaderboard(add_user_points, "pushups", add_pushups)
+                updateLeaderboard(add_user_points, "pullups", add_pullups)
+                updateLeaderboard(add_user_points, "squats", add_squats)
+
+                await ctx.send(
+                    f"{add_user_points} has been added to the leaderboard with {add_pushups} push-ups, {add_pullups} pull-ups and {add_squats} squats !"
+                )
 
 
 # Reset the leaderboard
 @client.command()
+@commands.has_permissions(administrator=True)
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
 async def reset_leaderboard(ctx):
-    if ctx.author.guild_permissions.administrator:
-        if ctx.channel.id == int(CHANNEL):
-            # Prompt the user to confirm the reset
-            await ctx.send(f"Are you sure you want to reset the leaderboard ? (y/n)")
+    if ctx.channel.id == int(CHANNEL):
+        # Prompt the user to confirm the reset
+        await ctx.send(f"Are you sure you want to reset the leaderboard ? (y/n)")
 
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
 
-            msg = await client.wait_for("message", check=check)
+        msg = await client.wait_for("message", check=check)
 
-            if msg.content == "y":
-                leaderboard = getLeaderboard()
-                for user in leaderboard:
-                    if user == "TOP_G_OF_THE_MONTH" or user == "Admin":
-                        continue
-                    deleteUserLeaderboard(user)
-                await ctx.send(f"The leaderboard has been reset !")
-            else:
-                return await ctx.send(f"The leaderboard has not been reset !")
-    else:
-        return await ctx.send(
-            f"{ctx.author.name} is not an admin !\nOnly admins can reset the leaderboard !"
-        )
+        if msg.content == "y":
+            leaderboard = getLeaderboard()
+            for user in leaderboard:
+                if user == "TOP_G_OF_THE_MONTH" or user == "Admin":
+                    continue
+                deleteUserLeaderboard(user)
+            await ctx.send(f"The leaderboard has been reset !")
+        else:
+            return await ctx.send(f"The leaderboard has not been reset !")
 
 
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+@commands.has_permissions(administrator=True)
 async def setTopG(ctx, top_g_user: str = ""):
-    if ctx.author.guild_permissions.administrator:
-        if top_g_user == "":
-            return await ctx.send(
-                f"Please specify a user to set as the TOP_G_OF_THE_MONTH !"
-            )
-
-        if ctx.channel.id == int(CHANNEL):
-            # Prompt the user to confirm the reset
-            await ctx.send(
-                f"Are you sure you want to set {top_g_user} as the TOP_G_OF_THE_MONTH ? (y/n)"
-            )
-
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
-
-            msg = await client.wait_for("message", check=check)
-
-            if msg.content == "y":
-                setTheTopG(top_g_user)
-                await ctx.send(f"{top_g_user} is now the TOP_G_OF_THE_MONTH !")
-            else:
-                return await ctx.send(f"{top_g_user} is not the TOP_G_OF_THE_MONTH !")
-    else:
+    if top_g_user == "":
         return await ctx.send(
-            f"{ctx.author.name} is not an admin !\nOnly admins can set the TOP_G_OF_THE_MONTH !"
+            f"Please specify a user to set as the TOP_G_OF_THE_MONTH !"
         )
 
+    if ctx.channel.id == int(CHANNEL):
+        # Prompt the user to confirm the reset
+        await ctx.send(
+            f"Are you sure you want to set {top_g_user} as the TOP_G_OF_THE_MONTH ? (y/n)"
+        )
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        msg = await client.wait_for("message", check=check)
+
+        if msg.content == "y":
+            setTheTopG(top_g_user)
+            await ctx.send(f"{top_g_user} is now the TOP_G_OF_THE_MONTH !")
+        else:
+            return await ctx.send(f"{top_g_user} is not the TOP_G_OF_THE_MONTH !")
 
 # Remove points from a user
 @client.command()
+@commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+@commands.has_permissions(administrator=True)
 async def remove_points(
     ctx,
     remove_user_points: str = "",
@@ -522,58 +558,57 @@ async def remove_points(
     remove_pullups: int = "",
     remove_squats: int = "",
 ):
-    if ctx.author.guild_permissions.administrator:
-        if ctx.channel.id == int(CHANNEL):
-            if remove_user_points == "":
-                await ctx.send(f"You must specify a user !")
-                return
+    if ctx.channel.id == int(CHANNEL):
+        if remove_user_points == "":
+            await ctx.send(f"You must specify a user !")
+            return
 
-            if remove_pushups <= 0:
-                remove_pushups = 0
+        if remove_pushups <= 0:
+            remove_pushups = 0
 
-            elif remove_pullups <= 0:
-                remove_pullups = 0
+        elif remove_pullups <= 0:
+            remove_pullups = 0
 
-            elif remove_squats <= 0:
-                remove_squats = 0
+        elif remove_squats <= 0:
+            remove_squats = 0
 
-            # Prompt the user to confirm the reset
-            await ctx.send(
-                f"Are you sure you want to remove {remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats to {remove_user_points}'s score ? (y/n)"
+        # Prompt the user to confirm the reset
+        await ctx.send(
+            f"Are you sure you want to remove {remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats to {remove_user_points}'s score ? (y/n)"
+        )
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        msg = await client.wait_for("message", check=check)
+        if msg.content == "y":
+            leaderboard = getLeaderboard()
+            # Check if the user has points
+            if remove_user_points in leaderboard:
+                # Check if the user has enough points to remove
+                if (
+                    leaderboard[remove_user_points]["pushups"] >= remove_pushups
+                    and leaderboard[remove_user_points]["pullups"] >= remove_pullups
+                    and leaderboard[remove_user_points]["squats"] >= remove_squats
+                ):
+                    updateLeaderboard(
+                        remove_user_points, "pushups", -remove_pushups
+                    )
+                    updateLeaderboard(
+                        remove_user_points, "pullups", -remove_pullups
+                    )
+                    updateLeaderboard(remove_user_points, "squats", -remove_squats)
+                else:
+                    return await ctx.send(
+                        f"{remove_user_points} does not have enough points to remove {remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats !"
+                    )
+            return await ctx.send(
+                f"{remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats have been removed from {remove_user_points}'s score !"
             )
-
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
-
-            msg = await client.wait_for("message", check=check)
-            if msg.content == "y":
-                leaderboard = getLeaderboard()
-                # Check if the user has points
-                if remove_user_points in leaderboard:
-                    # Check if the user has enough points to remove
-                    if (
-                        leaderboard[remove_user_points]["pushups"] >= remove_pushups
-                        and leaderboard[remove_user_points]["pullups"] >= remove_pullups
-                        and leaderboard[remove_user_points]["squats"] >= remove_squats
-                    ):
-                        updateLeaderboard(
-                            remove_user_points, "pushups", -remove_pushups
-                        )
-                        updateLeaderboard(
-                            remove_user_points, "pullups", -remove_pullups
-                        )
-                        updateLeaderboard(remove_user_points, "squats", -remove_squats)
-                    else:
-                        return await ctx.send(
-                            f"{remove_user_points} does not have enough points to remove {remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats !"
-                        )
-                return await ctx.send(
-                    f"{remove_pushups} push-ups, {remove_pullups} pull-ups and {remove_squats} squats have been removed from {remove_user_points}'s score !"
-                )
-            else:
-                return await ctx.send(
-                    f"No points have been removed from {remove_user_points}'s score !"
-                )
+        else:
+            return await ctx.send(
+                f"No points have been removed from {remove_user_points}'s score !"
+            )
     else:
         return await ctx.send(
             f"{ctx.author.name} is not an admin !\nOnly admins can remove points from a user !"

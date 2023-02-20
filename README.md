@@ -29,6 +29,24 @@ OR you can use Docker to run the bot by following the instructions below :
 6. Add your discord **bot token** in the `.env` file and the **channel id** where you want the bot to send the messages. By using those commands `sed -i 's/token=.*/token=**NEW_TOKEN_VALUE**/' .env && sed -i 's/channel_id=.*/channel_id=**YOUR_CHANNEL_ID**/' .env` in the terminal from folder where the bot is located.
 5. Enjoy !
 
+# Logs Storage
+
+The bot will create a folder named `logs` in the folder where the bot is located.
+It will store all the logs in a file named with the format `YYYY-MM-DD-DiscordIDServer.log` in the folder `logs`.
+For example, the file `2021-01-01-123456789012345678.log` will contain all the logs of the server with the ID `123456789012345678` on the 1st of January 2021.
+
+# Cooldown 
+
+The bot has a cooldown of **10 seconds** for each command.
+That means that you can't use the same command twice in less than 10 seconds.
+It can be changed in the file `main.py` in the variable `COOLDOWN` in the function `on_command`.
+
+# Quotes
+
+The bot will send a random quote from Andrew Tate and other inspirationnal people to keep you motivated and help you to improve yourself.
+The quotes are stored in the file `quotes.json` in the folder `data`.
+You can add your own quotes in the file `quotes.json` in the folder `data` by following the same format as the other quotes.
+
 # Commands.
 - `!get_started` to get all the commands available.
 - `!pushups ‹value>` add pushups to your total.
@@ -37,6 +55,9 @@ OR you can use Docker to run the bot by following the instructions below :
 - `!situps ‹value>` add situps to to your total.
 - `!score` to get the user's total score and individual scores for each exercises.
 - `!quote` to get a random quote with a GIF of Andrew Tate and more embedded into it.
+- `!leaderboard` to get the leaderboard of the server.
+- `!avatar` to get the user's avatar.
+- `!topG` to get the server's topG of the month.
 
 # Admin commands only.
 - `!help_admin` to get all the admin commands available.
