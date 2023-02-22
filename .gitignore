@@ -3,3 +3,4 @@ leaderboard.json
 leaderboard_copy.json
 __pycache__/
 logs/*
+discloud.config

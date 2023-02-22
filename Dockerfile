@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
-ARG token = "your token"
-ARG channel_id = "your channel id"
+ARG token
+ARG channel_id
 
 RUN apt-get update && apt-get install python3-pip git -y
 
