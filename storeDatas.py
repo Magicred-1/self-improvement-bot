@@ -2,7 +2,22 @@ import json
 import os
 import datetime
 
+EXERCISES = ["pushups", "pullups", "squats", "situps", "jumping_jacks", "burpees"]
+
 FILE_SOURCE = "./leaderboard.json"
+
+def writeLogs(ctx, message):
+    date = datetime.datetime.now().strftime("%d-%m-%Y")
+    date_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    discordServerID = ctx.guild.id
+
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    logs_file = open(f"./logs/{date}-{discordServerID}.logs", "a")
+    logs_file.write(f'{date_time} : [LOGS] {message}\n')
+    print(f'{date_time} : [LOGS] {message}\n')
+    logs_file.close()
 
 def initLeaderboard():
     # Create a new leaderboard file and create the user TOP_G_OF_THE_MONTH & Admin user if the leaderboard file is empty
@@ -17,7 +32,8 @@ def initLeaderboard():
                 "date": {"day": 0, "month": 0, "year": 0},
             }
         if "Admin" not in leaderboard:
-            leaderboard["Admin"] = {"pushups": 0, "pullups": 0, "squats": 0}
+            for exercise in EXERCISES:
+                leaderboard["Admin"][exercise] = 0
     with open(FILE_SOURCE, "w") as f:
         json.dump(leaderboard, f, indent=4)
 
@@ -27,14 +43,12 @@ def initUserScore(username):
     with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         if username not in leaderboard:
-            leaderboard[username] = {"pushups": 0, "pullups": 0, "squats": 0}
+            for exercise in EXERCISES:
+                leaderboard[username][exercise] = 0
         else:
-            if "pushups" not in leaderboard[username]:
-                leaderboard[username]["pushups"] = 0
-            if "pullups" not in leaderboard[username]:
-                leaderboard[username]["pullups"] = 0
-            if "squats" not in leaderboard[username]:
-                leaderboard[username]["squats"] = 0
+                if exercise not in leaderboard[username]:
+                    for exercise in EXERCISES:
+                        leaderboard[username][exercise] = 0
     with open("./leaderboard.json", "w") as f:
         json.dump(leaderboard, f, indent=4)
 
@@ -80,16 +94,24 @@ def getUserScore(username):
     with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
         if username in leaderboard:
+
             pushups = 0
             pullups = 0
             squats = 0
+            jumping_jacks = 0
+            burpees = 0
+
             if "pushups" in leaderboard[username]:
                 pushups = leaderboard[username]["pushups"]
             if "pullups" in leaderboard[username]:
                 pullups = leaderboard[username]["pullups"]
             if "squats" in leaderboard[username]:
                 squats = leaderboard[username]["squats"]
-            return pushups + pullups * 2 + squats // 5
+            if "jumping_jacks" in leaderboard[username]:
+                jumping_jacks = leaderboard[username]["jumping_jacks"]
+            if "burpees" in leaderboard[username]:
+                burpees = leaderboard[username]["burpees"]
+            return pushups + pullups * 2 + squats // 5 + jumping_jacks // 10 + burpees * 2
         else:
             return 0
 
