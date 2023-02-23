@@ -1,9 +1,9 @@
 FROM ubuntu:latest
 
-ARG token = "your token"
-ARG channel_id = "your channel id"
+ARG token
+ARG channel_id
 
-RUN apt-get update && apt-get install python3-pip git -y
+RUN apt-get update && apt-get install python3-pip python3.10-venv git -y && pip3 install python-dotenv
 
 RUN mkdir /app
 
@@ -13,14 +13,16 @@ RUN git clone https://github.com/Magicred-1/self-improvement-bot
 
 WORKDIR /self-improvement-bot
 
-VOLUME /logs
-
-RUN echo "*/1 * * * * /bin/bash -c 'cp /self-improvement-bot/logs/* /logs'" >> /etc/crontab
+RUN pip3 install -r requirements.txt
 
 RUN mv ./.env.example ./.env
 
-RUN sed -i "s/your token/$token/g" .env && sed -i "s/your channel id/$channel_id/g" .env
+RUN sed -i "s/your_token_here/$token/g" .env && sed -i "s/your_channel_id_here/$channel_id/g" .env
 
-RUN pip3 install -r requirements.txt
+RUN python3 -m venv venv
 
-CMD ["python3", "main.py"]
+RUN . venv/bin/activate && pip3 install -r requirements.txt
+
+# Run the bot in python env
+
+CMD ["venv/bin/python3", "main.py"]
