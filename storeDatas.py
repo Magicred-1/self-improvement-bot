@@ -32,6 +32,7 @@ def initLeaderboard():
                 "date": {"day": 0, "month": 0, "year": 0},
             }
         if "Admin" not in leaderboard:
+            "Admin" : {}
             for exercise in EXERCISES:
                 leaderboard["Admin"][exercise] = 0
     with open(FILE_SOURCE, "w") as f:
