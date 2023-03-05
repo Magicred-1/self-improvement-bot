@@ -25,4 +25,5 @@ RUN . venv/bin/activate && pip3 install -r requirements.txt
 
 # Run the bot in python env
 
-CMD ["venv/bin/python3", "main.py"]
+# python -B main.py
+CMD ["venv/bin/python3", "-B", "main.py"]
