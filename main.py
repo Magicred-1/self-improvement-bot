@@ -5,6 +5,9 @@ from src.storeDatas.storeDatas import *
 from src.duelView.duelView import InitDuel
 from src.chessView.chessView import InitChessGame
 from src.quoteHandler.quoteHandler import QuoteHandler
+import asyncio
+import datetime
+from datetime import datetime
 
 # Created by Djason Gadiou (Magicred1#3948) on Discord
 # Github : https://github.com/Magicred-1/self-improvement-bot
@@ -40,7 +43,7 @@ if __name__ == "__main__":
     @bot.event
     async def on_application_command_error(ctx: discord.ApplicationContext, error: discord.DiscordException):
 
-        timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
         if isinstance(error, commands.CommandOnCooldown):
             message =  f"Not so quick {ctx.author.mention} ! Wait {round(error.retry_after, 2)} seconds before using this command again ! :moyai:"
@@ -76,12 +79,14 @@ if __name__ == "__main__":
 
     # Bot commands logs and error handling
     @bot.event
-    async def on_application_command(ctx):
+    async def on_application_command(ctx: discord.ApplicationContext):
         if ctx.channel.id == CHANNEL:
-            message = f'{ctx.author} has used the command {ctx.message.content} in {ctx.channel} at {ctx.message.created_at}.'
-            print(f'{ctx.author} has used the command {ctx.message.content} in {ctx.channel} at {ctx.message.created_at}.')
+            timestamp = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            message = f'{ctx.author} has used the command {ctx.message.content} in {ctx.channel} at {timestamp}.'
+            print(f'{ctx.author} has used the command {ctx.message.content} in {ctx.channel} at {timestamp}.')
 
             writeLogs(ctx, message)
+        
 
     @bot.event
     async def on_command(ctx):
@@ -331,37 +336,37 @@ if __name__ == "__main__":
 
             if user_id in leaderboard:
                 score_window.add_field(
-                    name="Push-ups", 
+                    name="**:hand_splayed: Push-ups :hand_splayed:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['pushups']}** push-ups", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Pull-ups", 
+                    name="**:muscle: Pull-ups :muscle:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['pullups']}** pull-ups", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Squats", 
+                    name="**:leg: Squat(s) :leg:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['squats']}** squats", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Jumping Jack", 
+                    name="**:leftwards_hand: Jumping Jacks :rightwards_hand:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['jumping_jacks']}** jumping jacks", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Burpees", 
+                    name="**:up: Burpees :up:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['burpees']}** burpees", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Sit-ups", 
+                    name="**:chair: Sit-ups :chair:**", 
                     value=f"**{leaderboard[str(user_id)]['exercises']['situps']}** sit-ups", 
                     inline=True
                 )
                 score_window.add_field(
-                    name="Total", 
+                    name="**💯 Total 💯**", 
                     value=f"**{getUserScore(user_id)}** points", 
                     inline=True
                 )
@@ -373,7 +378,6 @@ if __name__ == "__main__":
                     inline=True
                 )
                 return await ctx.respond(embed=score_window, ephemeral=True)
-
 
 
     @bot.slash_command(
@@ -475,8 +479,13 @@ if __name__ == "__main__":
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
     async def quote(ctx):
-        handler = QuoteHandler('quotes.txt')
-        quotes = handler.getRandomQuote()
+        handler = QuoteHandler()
+
+        # Gets a random quote from the json file
+        getQuote = handler.getRandomQuote()
+        
+        quote_content = getQuote["quote_content"]
+        quote_author = getQuote["author"]
 
         if ctx.channel.id == int(CHANNEL):
             # Sends one random quote from Andrew Tate to the channel
@@ -487,7 +496,12 @@ if __name__ == "__main__":
             )
             andrewGIF.add_field(
                 name="**Quote of the day :**",
-                value=f"{quotes}",
+                value=f"{quote_content}",
+                inline=False,
+            )
+            andrewGIF.add_field(
+                name="**Author :**",
+                value=f"{quote_author}",
                 inline=False,
             )
             andrewGIF.set_image(
@@ -666,7 +680,7 @@ if __name__ == "__main__":
             )
             credits.add_field(
                 name="**__:tools: Self Improvement Bot :tools:__**",
-                value="Made by **__Magicred1#3948__ with DiscordPy [GitHub Repo](https://github.com/Magicred-1/self-improvement-bot)**",
+                value="Made by **__Magicred1#3948__ with Pycord [GitHub Repo](https://github.com/Magicred-1/self-improvement-bot)**",
                 inline=False,
             )
             credits.add_field(
@@ -805,10 +819,6 @@ if __name__ == "__main__":
         add_burpees: Option(int, "The number of burpees to add", required=False, default=0),
         add_situps: Option(int, "The number of situps to add", required=False, default=0),
     ):
-
-        if add_user_points == "":
-            return await ctx.respond(f"Please specify a user to add points to !")
-
         if ctx.channel.id == int(CHANNEL):
             # get user id from username
             def getUserID(username):
@@ -816,44 +826,61 @@ if __name__ == "__main__":
                     if member.name == username:
                         return member.id
 
-            user_id = getUserID(add_user_points)
+        user_id = getUserID(add_user_points)
+        print (user_id)
 
-            # Prompt the user to confirm the reset
-            await ctx.respond(
-                f"Are you sure you want to add {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks}, {add_burpees} and sit-ups {add_situps} to {add_user_points}'s score ? (y/n)", ephemeral=True
-            )
+        if add_user_points == "":
+            return await ctx.respond(f"Please specify a user to add points to !")
 
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
 
-            msg = await bot.wait_for("message", check=check)
+        # remove the @ from the username
+        add_user_points = add_user_points[2:-1]
 
-            if msg.content == "y":
-                leaderboard = getLeaderboard()
-                if add_user_points in leaderboard:
-                    # Add the points to the user in the leaderboard
-                    updateLeaderboard(add_user_points, "pushups", add_pushups, user_id)
-                    updateLeaderboard(add_user_points, "pullups", add_pullups, user_id)
-                    updateLeaderboard(add_user_points, "squats", add_squats, user_id)
-                    updateLeaderboard(add_user_points, "jumping_jacks", add_jumping_jacks, user_id)
-                    updateLeaderboard(add_user_points, "burpees", add_burpees, user_id)
-                    updateLeaderboard(add_user_points, "situps", add_situps, user_id)
+        # get user id from username
+        add_user_points = bot.get_user(int(add_user_points)).name
 
-                    await msg.delete()
 
-                    await ctx.respond(
-                        f"{add_user_points} has been added {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks} jumping jacks, {add_burpees} burpees and {add_situps} sit-ups to {add_user_points}'s score !", ephemeral=True
-                    )
-                else:
-                    updateLeaderboard(add_user_points, "pushups", add_pushups, user_id)
-                    updateLeaderboard(add_user_points, "pullups", add_pullups, user_id)
-                    updateLeaderboard(add_user_points, "squats", add_squats, user_id)
-                    updateLeaderboard(add_user_points, "jumping_jacks", add_jumping_jacks, user_id)
-                    updateLeaderboard(add_user_points, "burpees", add_burpees, user_id)
-                    updateLeaderboard(add_user_points, "situps", add_situps, user_id)
-                    await ctx.respond(
-                        f"{add_user_points} has been created and added to the leaderboard with {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks} jumping jacks, {add_burpees} burpees and {add_situps} sit-ups to {add_user_points}'s score !", ephemeral=True
-                    )
+        # Prompt the user to confirm the reset
+        await ctx.respond(
+            f"Are you sure you want to add {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks}, {add_burpees} and sit-ups {add_situps} to {add_user_points}'s score ? (y/n)", ephemeral=True
+        )
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        msg = await bot.wait_for("message", check=check)
+
+        print(user_id)
+
+        if msg.content == "y":
+            leaderboard = getLeaderboard()
+            if user_id in leaderboard:
+                # Add the points to the user in the leaderboard
+                updateLeaderboard(add_user_points, "pushups", add_pushups, user_id)
+                updateLeaderboard(add_user_points, "pullups", add_pullups, user_id)
+                updateLeaderboard(add_user_points, "squats", add_squats, user_id)
+                updateLeaderboard(add_user_points, "jumping_jacks", add_jumping_jacks, user_id)
+                updateLeaderboard(add_user_points, "burpees", add_burpees, user_id)
+                updateLeaderboard(add_user_points, "situps", add_situps, user_id)
+
+                await msg.delete()
+
+                await ctx.respond(
+                    f"{add_user_points} has been added {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks} jumping jacks, {add_burpees} burpees and {add_situps} sit-ups to {add_user_points}'s score !", ephemeral=True
+                )
+            else:
+                updateLeaderboard(add_user_points, "pushups", add_pushups, user_id)
+                updateLeaderboard(add_user_points, "pullups", add_pullups, user_id)
+                updateLeaderboard(add_user_points, "squats", add_squats, user_id)
+                updateLeaderboard(add_user_points, "jumping_jacks", add_jumping_jacks, user_id)
+                updateLeaderboard(add_user_points, "burpees", add_burpees, user_id)
+                updateLeaderboard(add_user_points, "situps", add_situps, user_id)
+
+                await msg.delete()
+
+                await ctx.respond(
+                    f"{add_user_points} has been created and added to the leaderboard with {add_pushups} push-ups, {add_pullups} pull-ups, {add_squats} squats, {add_jumping_jacks} jumping jacks, {add_burpees} burpees and {add_situps} sit-ups to {add_user_points}'s score !", ephemeral=True
+                )
 
 
     # Reset the leaderboard
@@ -895,38 +922,40 @@ if __name__ == "__main__":
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
     @commands.has_permissions(administrator=True)
     async def settopg(ctx, top_g_user: Option(str, "The user to set as the TOP G OF THE MONTH", required=True)):
-
-        # remove the @ from the username
-        top_g_user = top_g_user[2:-1]
-
-        # get user id from username
-        username = bot.get_user(int(top_g_user)).name
-
         if ctx.channel.id == int(CHANNEL):
-            # Prompt the user to confirm the reset
-            await ctx.respond(
-                f"Are you sure you want to set {username} as the TOP_G_OF_THE_MONTH ? (y/n)", ephemeral=True
-            )
+            user = await bot.fetch_user(int(top_g_user[2:-1]))
+        
+        current_month = datetime.now().strftime("%B")
 
-            def check(m):
-                return m.author == ctx.author and m.channel == ctx.channel
+        # Prompt the user to confirm the reset
+        await ctx.respond(f"Are you sure you want to set {user.name} as the TOP_G_OF_THE_MONTH ? (y/n)", ephemeral=True)
 
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
             msg = await bot.wait_for("message", check=check, timeout=60)
 
             if msg.content == "y":
-                setTheTopG(ctx, top_g_user)
+                if setTheTopG(ctx, user.id) == True:
 
-                await msg.delete()
+                    await msg.delete()
 
-                await ctx.respond(f"{username} is now the TOP_G_OF_THE_MONTH !", ephemeral=True)
+                    await ctx.respond(f":white_check_mark: {user.mention} is now the TOP_G_OF_THE_MONTH! :white_check_mark:", ephemeral=True)
+                else: 
+                    await msg.delete()
+
+                    await ctx.respond(f":x: The TOP G has already choosen for this month (**{current_month}**):x:\n__Wait until the next month to choose another user.__", ephemeral=True)
             else:
-
                 await msg.delete()
 
-                return await ctx.respond(f"{username} is not the TOP_G_OF_THE_MONTH !", ephemeral=True)
+                await ctx.respond(f":x: The TOP_G_OF_THE_MONTH has not been changed :x:", ephemeral=True)
 
-            # clear the last message sent by the user
-            await ctx.channel.purge(limit=1, check=lambda m: m.author == ctx.author)
+        except asyncio.TimeoutError:
+            await ctx.respond("Timed out waiting for confirmation.", ephemeral=True)
+
+        # clear the last message sent by the user
+        await ctx.channel.purge(limit=1, check=lambda m: m.author == ctx.author)
 
 
     # Remove points from a user
@@ -1031,5 +1060,8 @@ if __name__ == "__main__":
                 return await ctx.respond(
                     f"No points have been removed from {remove_user_points}'s score !"
                 )
-                
+
+            await msg.delete()
+
+    
     bot.run(TOKEN)

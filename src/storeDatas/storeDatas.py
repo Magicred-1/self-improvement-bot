@@ -1,8 +1,7 @@
 import json
 import os
 import datetime # For the logs
-from datetime import timezone
-from dotenv import load_dotenv
+from dotenv import load_dotenv # For the .env file
 
 EXERCISES = ["pushups", "pullups", "squats", "jumping_jacks", "burpees", "situps"]
 
@@ -109,7 +108,8 @@ def getUserScore(user_id):
     # Get the score of a user
     with open("./leaderboard.json", "r") as f:
         leaderboard = json.load(f)
-        if str(user_id) in leaderboard:
+        
+        if str(user_id) in leaderboard and "exercises" in leaderboard[str(user_id)]:
 
             pushups = 0
             pullups = 0
@@ -175,7 +175,7 @@ def getTheTopG():
         ):
             topG = leaderboard["1074307468160667648"]["top_g_of_the_month"]["username"]
         else:
-            topG = f"The TOP G of {month} is not set yet. \nYou can set it by using the command !settopg"
+            topG = f"The TOP G of {month} is not set yet. \nYou can set it by using the command /settopg"
     return topG
 
 
@@ -187,10 +187,6 @@ def setTheTopG(ctx, user_id):
     full_date_plus_1 = f"{current_day}/{current_month+1}/{current_year}"
 
     user_id = str(user_id)
-
-    user_id = user_id.replace("<", "") # We remove the < and > from the user_id
-    user_id = user_id.replace(">", "")
-    user_id = user_id.replace("@", "") # We remove the @ from the user_id
 
     # We get the username of the user_id
 
@@ -204,9 +200,8 @@ def setTheTopG(ctx, user_id):
                 and leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["month"] == current_month
                 and leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["year"] == current_year
             ):
-                return f"The TOP G of {current_month} is already set recently wait until {full_date_plus_1}."
+                return False
             else:
-                # We set the TOP_G_OF_THE_MONTH and we update the date
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["username"] = username
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["day"] = current_day
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["month"] = current_month
@@ -231,7 +226,7 @@ def setTheTopG(ctx, user_id):
                     },
                 },
             }
-                    
+            return True  
 
     with open("./leaderboard.json", "w") as f:
         json.dump(leaderboard, f, indent=4)
