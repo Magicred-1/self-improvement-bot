@@ -1,5 +1,5 @@
 # self-improvement-bot
-## Andrew Tate's self-improvement bot (Discord bot) using Python and Discord.py (Vanilla Version)
+## Andrew Tate's self-improvement bot (Discord bot) using Python and Pycord.py
 **By: [Djason Gadiou](https://github.com/Magicred-1/)**
 
 **Discord: Magicred1#3948**
@@ -13,8 +13,8 @@ It will also give you a random quote from Andrew Tate and other inspirationnal p
 1. Clone this repository
 2. Install the requirements with `pip install -r requirements.txt` with MacOS / Linux distro or `py -3 -m pip install -r requirements.txt` on Windows.
 3. Rename the file `.env.example` to `.env`
-4. Add your discord **bot token** in the `.env` file and the **channel id** where you want the bot to send the messages.
-5. Run `py -3 main.py` in the terminal from folder where the bot is located.
+4. Add your discord **bot token** in the `.env` file and the **channel id** where you want the bot to send the messages including your **guild id**.
+5. Run `py -B main.py` in the terminal from folder where the bot is located.
 
 If you want to use the bot on your own server, you will need to create a Discord bot and add it to your server.<br>
 Here is a tutorial on how to do it:<br> [writebots_website](https://www.writebots.com/discord-bot-token/) or [youtube_video](https://www.youtube.com/watch?v=SPTfmiYiuok)
@@ -23,7 +23,7 @@ OR you can use Docker to run the bot by following the instructions below :
 
 1. Installing Docker : [docker_website](https://docs.docker.com/get-docker/)
 2. Clone this repository
-3. Run the Dockerfile with `docker build . --build-arg token=<your_token> --build-arg channel_id=<your_channel_id> -t self-improvement-bot` inside the folder where the bot is located.
+3. Run the Dockerfile with `docker build . --build-arg token=<your_token> --build-arg channel_id=<your_channel_id> --build-arg guild_id=<your_guild_id> -t self-improvement-bot`
 4. Run the Dockerfile with `docker run -d self-improvement-bot`
 5. Enjoy !
 

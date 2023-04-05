@@ -203,6 +203,7 @@ def setTheTopG(ctx, user_id):
                 return False
             else:
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["username"] = username
+                leaderboard["1074307468160667648"]["top_g_of_the_month"]["user_id"] = user_id
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["day"] = current_day
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["month"] = current_month
                 leaderboard["1074307468160667648"]["top_g_of_the_month"]["date"]["year"] = current_year
@@ -219,6 +220,7 @@ def setTheTopG(ctx, user_id):
                 },
                 "top_g_of_the_month": {
                     "username": username,
+                    "user_id": user_id,
                     "date": {
                         "day": current_day,
                         "month": current_month,

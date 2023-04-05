@@ -1,5 +1,6 @@
 import discord
 from discord.ui import View
+from discord.utils import format_dt
 import datetime
 import asyncio
 
@@ -109,7 +110,7 @@ class InitDuel(View):
                 ephemeral=False, 
                 view=RequestDuel(self.ctx, self.challenger, self.user, self.exercise, self.time)
             )
-            print(f"A duel has been started !\n{self.challenger} challenged {self.user} to a {self.exercise} duel for {self.time} minutes !")
+            print(f"A duel has been started !\n{self.challenger} challenged {self.user} to a {self.exercise} duel for {self.time} minute(s) !")
             self.stop()
         else:
             await interaction.response.send_message(
@@ -137,16 +138,22 @@ class RequestDuel(View):
         for child in self.children:
             child.disabled = True
         await self.message.edit(content=":x: **__Duel timed out !__** :x:\nIf you want to start a duel, please use the **/duel** command again !", view=self)
+        self.stop()
 
     @discord.ui.button(label="Accept Duel", style=discord.ButtonStyle.green, emoji="✅")
     async def accept(self, button: discord.ui.Button, interaction: discord.Interaction):
         # if it's the user that clicked on the button we send the message to the challenger
         if self.user == interaction.user:
             await interaction.response.send_message(
-                f"{self.user.mention} **{self.challenger}** challenged you to a **{self.exercise}** duel for **{self.time}** minute(s) !", ephemeral=False, 
+                f"When you guys are ready, please use the **Start Button** below !\nYou have 2 minutes to start the duel !",
                 view=StartDuel(self.ctx, self.user, self.exercise, self.time, self.challenger)
             )
             self.stop()
+        elif self.challenger == interaction.user:
+            await interaction.response.send_message(
+                f"{self.challenger.mention} you can't accept your own duel request !", 
+                ephemeral=True
+            )
         else:
             embed = discord.Embed(
                 title=":x: **__Nope !__** :x:",
@@ -160,7 +167,7 @@ class RequestDuel(View):
     async def decline(self, button: discord.ui.Button, interaction: discord.Interaction):
         if self.user == interaction.user:
             await interaction.response.send_message(
-                f"{self.user.mention} declined the duel !", ephemeral=True
+                f"{self.user.mention} declined the duel request from {self.challenger.mention} !"
             )
             self.stop()
         else:
@@ -173,7 +180,7 @@ class RequestDuel(View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def on_timeout(self):
-        await self.ctx.send(f"{self.user.mention} didn't accept the duel of {self.challenger} !")
+        await self.ctx.send(f"{self.user.mention} didn't accept the duel of {self.challenger.mention} !")
         for child in self.children:
             child.disabled = True
         self.stop()
@@ -181,26 +188,25 @@ class RequestDuel(View):
 
 class StartDuel(View):
     def __init__(self, ctx, user, exercise, time, challenger):
-        super().__init__(timeout=int(time) * 60 + 30)
+        super().__init__(timeout=int(time) * 60)
         self.ctx = ctx
         self.user = user
         self.exercise = exercise
         self.time = time
         self.challenger = challenger
-        self.timestamp = datetime.datetime.utcnow() + datetime.timedelta(minutes=int(time))
-    
 
     async def on_timeout(self):
         for child in self.children:
             child.disabled = True
-        await self.message.edit(content=":x: **__Duel timed out !__** :x:\nIf you want to start a duel, please use the **/duel** command again !", view=self)
+        await self.message.edit(content=":x: **__Duel is over !__** :x:\nTime to rest and set your scores !", view=ResultDuel(self.ctx, self.user, self.challenger))
 
-    async def startCountdown(self, time, timestamp):
-        # remove the buttons
+    async def start_countdown(self, time, interaction):
+
         self.clear_items()
+
         self.duel_embed = discord.Embed(
             title=f"**:crossed_swords: Fitness Duel :crossed_swords:**",
-            description=f"{self.user.mention} vs {self.challenger}",
+            description=f"{self.user.mention} vs {self.challenger.mention}",
             color=discord.Colour.random(),
         )
         self.duel_embed.set_thumbnail(url="https://media.tenor.com/x5X7TBHrvzMAAAAM/fight.gif")
@@ -211,20 +217,12 @@ class StartDuel(View):
         )
         self.duel_embed.add_field(
             name="**👊 __Exercise :__ 👊**",
-            value=f"{self.exercise}",
+            value=f"{self.exercise.capitalize()}",
             inline=False,
         )
-        self.duel_embed.set_footer(text=f"Ends at {timestamp.utcnow() + datetime.timedelta(minutes=int(time))}")
+        self.duel_embed.set_footer(text=f"Ends at {format_dt(datetime.datetime.utcnow() + datetime.timedelta(minutes=int(time)), style='R')}")
 
-        await self.ctx.send(embed=self.duel_embed, view=self)
-
-        if timestamp > datetime.datetime.utcnow() + datetime.timedelta(minutes=int(time)):
-            await asyncio.sleep(1)
-
-            # update the embed
-            self.duel_embed.set_field_at(
-                0, name="**:hourglass: __Time :__ :hourglass:**", value=f"{time - 1} minute(s)"
-            )
+        await interaction.response.send_message(embed=self.duel_embed, ephemeral=False, view=self)
             
     @discord.ui.button(label="Start", style=discord.ButtonStyle.green)
     async def start(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -233,8 +231,72 @@ class StartDuel(View):
                 f"You not that guy pal, trust me {interaction.user.mention} !", ephemeral=True
             )
         else:
+            await self.start_countdown(self.time, interaction)
+
+class ResultDuel(View):
+    def __init__(self, ctx, user, challenger):
+        super().__init__()
+        self.ctx = ctx
+        self.user = user
+        self.challenger = challenger
+        self.challenger_score = 0
+        self.user_score = 0
+
+    # We ask for the user's result in the chat and challenge score
+    @discord.ui.button(label="Set Result", style=discord.ButtonStyle.green)
+    async def send_result(self, button: discord.ui.Button, interaction: discord.Interaction):
+        if interaction.user not in [self.user, self.challenger]:
+            await interaction.response.send_message(
+                f"You not that guy pal, trust me {interaction.user.mention} !", ephemeral=True
+            )
+        else:
             await interaction.message.delete()
-            # start the countdown
-            await self.startCountdown(self.time, self.timestamp)
-            await asyncio.sleep(1)
-            self.stop()
+            if interaction.user == self.user:
+                await self.ctx.send(f"{interaction.user.mention} please send your score !")
+                def check(m):
+                    return m.author == interaction.user and m.channel == self.ctx.channel
+                try:
+                    msg = await self.ctx.bot.wait_for("message", timeout=120.0, check=check)
+                except asyncio.TimeoutError:
+                    await self.ctx.send("You took too long to respond !")
+                else:
+                    if msg.content >= 1 and msg.content <= 1000:
+                        self.challenger_score = msg.content
+                        await interaction.response.send_message(f"{self.user} score has been set !", ephemeral=True)
+                        interaction.response.defer()
+            elif interaction.user == self.challenger:
+                await interaction.response.send_message(f"{interaction.user.mention} please send your score !")
+                def check(m):
+                    return m.author == interaction.user and m.channel == self.ctx.channel
+                try:
+                    msg = await self.ctx.bot.wait_for("message", timeout=120.0, check=check)
+                except asyncio.TimeoutError:
+                    await self.ctx.send("You took too long to respond !")
+                else:
+                    if msg.content >= 1 and msg.content <= 1000:
+                        self.challenger_score = msg.content
+                        await interaction.response.send_message(f"{self.user} score has been set !", ephemeral=True)
+                        interaction.response.defer()
+            # We check who won
+            await self.check_winner()
+
+    def check_winner(self):
+        embed = discord.Embed(
+            title=":trophy: **__Duel Results :__** :trophy:",
+            description=f"{self.user.mention} vs {self.challenger.mention}",
+            color=discord.Colour.random(),
+        )
+        embed.set_thumbnail(url="https://media.tenor.com/x5X7TBHrvzMAAAAM/fight.gif")
+        embed.add_field(
+            name="**👊 __The winner is :__ 👊**",
+            value=f"{self.user.mention if self.user_score > self.challenger_score else self.challenger.mention} with a score of {self.user_score if self.user_score > self.challenger_score else self.challenger_score}",
+            inline=False,
+        )
+        embed.add_field(
+            name="**👊 __The loser is :__ 👊**",
+            value=f"{self.user.mention if self.user_score < self.challenger_score else self.challenger.mention} with a score of {self.user_score if self.user_score < self.challenger_score else self.challenger_score}",
+            inline=False,
+        )
+    
+
+    # We check

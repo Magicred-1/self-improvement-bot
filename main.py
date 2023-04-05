@@ -32,6 +32,8 @@ if __name__ == "__main__":
     @bot.event
     async def on_ready():
         # Prints the bot's name
+        activity = discord.Game(name="Prison Escape", type=3)
+        await bot.change_presence(status=discord.Status.idle, activity=activity)
         print(
             f"{bot.user} (id : {bot.user.id}) has connected to the Discord and he's here to make you workout and rich !"
         )
@@ -139,7 +141,7 @@ if __name__ == "__main__":
             # Adds the number of push-ups done by the user to the leaderboard
             if number_of_pushups != 0 and number_of_pushups > 0 and number_of_pushups <= 1000:
                 await ctx.respond(
-                    f"You've done {number_of_pushups} push-ups ! :partying_face:", ephemeral=True
+                    f"{ctx.author.mention} has done {number_of_pushups} push-ups ! :partying_face:"
                 )
                 # We store the number of push-ups multiplied by 2 in the leaderboard.json file
                 updateLeaderboard(ctx.author.name, "pushups", number_of_pushups, ctx.author.id)
@@ -169,7 +171,7 @@ if __name__ == "__main__":
             # Adds the number of pull-ups done by the user to the leaderboard
             if number_of_pullups > 0 and number_of_pullups <= 1000:
                 await ctx.respond(
-                    f"You've done {number_of_pullups} pull-ups ! :partying_face:", ephemeral=True
+                    f"{ctx.author.mention} has done {number_of_pullups} pull-ups ! :partying_face:"
                 )
                 # We store the number of pull-ups multiplied by 2 in the leaderboard.json file
                 updateLeaderboard(ctx.author.name, "pullups", number_of_pullups, ctx.author.id)
@@ -199,7 +201,7 @@ if __name__ == "__main__":
             # We divide the number of squats by 5 because it's easier to do 5 squats than 1 push-up
             if number_of_squats > 0 and number_of_squats <= 1000:
                 await ctx.respond(
-                    f"You've done {number_of_squats} squats, keep going ! :partying_face:", ephemeral=True
+                    f"{ctx.author.mention} has done {number_of_squats} squats, keep going ! :partying_face:"
                 )
                 # We store the number of squats divided by 5 in the leaderboard.json file
                 updateLeaderboard(ctx.author.name, "squats", number_of_squats, ctx.author.id)
@@ -212,7 +214,7 @@ if __name__ == "__main__":
                     url="https://media.tenor.com/1N_B-Tw_77QAAAAM/andrew-tate-shut-up.gif"
                 )
                 error.set_author(name=f"{ctx.author.name}")
-                return await ctx.respond(embed=error)
+                return await ctx.respond(embed=error, ephemeral=True)
 
 
     @bot.slash_command(
@@ -228,7 +230,7 @@ if __name__ == "__main__":
         if ctx.channel.id == int(CHANNEL):
             if number_of_jumpingjacks > 0 and number_of_jumpingjacks <= 1000:
                 await ctx.respond(
-                    f"You've done {number_of_jumpingjacks} jumping jacks, keep going ! :partying_face:", ephemeral=True
+                    f"{ctx.author.mention} has done {number_of_jumpingjacks} jumping jacks, keep going ! :partying_face:"
                 )
                 # We store the number of jumping jacks divided by 3 in the leaderboard.json file
                 updateLeaderboard(ctx.author.name, "jumping_jacks", number_of_jumpingjacks, ctx.author.id)
@@ -257,7 +259,7 @@ if __name__ == "__main__":
         if ctx.channel.id == int(CHANNEL):
             if number_of_burpees > 0 and number_of_burpees <= 1000:
                 await ctx.respond(
-                    f"You've done {number_of_burpees} burpees, keep going ! :partying_face:"
+                    f"{ctx.author.mention} has done {number_of_burpees} burpees, keep going ! :partying_face:"
                 )
                 # We store the number of burpees multiplied by 2 in the leaderboard.json file
                 updateLeaderboard(ctx.author.name, "burpees", number_of_burpees, ctx.author.id)
@@ -284,7 +286,7 @@ if __name__ == "__main__":
         ):
         if number_of_situps > 0 and number_of_situps <= 1000:
             await ctx.respond(
-                f"You've done {number_of_situps} sit-ups, keep going ! :partying_face:"
+                f"{ctx.author.mention} has done {number_of_situps} sit-ups, keep going ! :partying_face:"
             )
             # We store the number of sit-ups divided by 2 in the leaderboard.json file
             updateLeaderboard(ctx.author.name, "situps", number_of_situps, ctx.author.id)
@@ -439,7 +441,7 @@ if __name__ == "__main__":
                 inline=False
             )
             help.add_field(
-                name="<:1257gigachadpink:1002689383763292240> **/topG** <:1257gigachadpink:1002689383763292240>", 
+                name="<:1257gigachadpink:1002689383763292240> **/topg** <:1257gigachadpink:1002689383763292240>", 
                 value="Shows the TOP G OF THE MONTH", 
                 inline=False
             )
@@ -460,6 +462,11 @@ if __name__ == "__main__":
             help.add_field(
                 name="WIP :crossed_swords: **/duel** :crossed_swords:",
                 value="Challenge someone to a fitness duel",
+                inline=False,
+            )
+            help.add_field(
+                name="WIP :chess_pawn: **/chess** :chess_pawn:",
+                value="Challenge someone to a chess duel",
                 inline=False,
             )
             help.set_image(
@@ -620,7 +627,7 @@ if __name__ == "__main__":
                 return await ctx.respond("You can't challenge a bot :smirk:", ephemeral=True)
             else:
                 await ctx.respond(
-                    f"You choosen to challenge {user.mention} to a fitness duel.:japanese_goblin:\nPlease select an exercise and a time limit.", 
+                    f"You choosed to challenge {user.mention} to a fitness duel.:japanese_goblin:\nPlease select an exercise and a time limit.", 
                     ephemeral=True,
                     view=InitDuel(ctx.author, user, ctx.author),
                 )
@@ -645,6 +652,21 @@ if __name__ == "__main__":
                     ephemeral=True,
                     view=InitChessGame(ctx, ctx.author.name, opponent.name),
                 )
+
+    @bot.slash_command(
+        name="count",
+        description="Countdown",
+        guild_ids=testing_servers,
+    )
+    @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
+    async def count(ctx, duration:int):
+        msg = await ctx.send("Started")
+        for i in range(duration, -1, -1):
+            m, s = divmod(i, 60)
+            await msg.edit(content="{0:02}:{1:02}".format(m, s))
+            await asyncio.sleep(1)
+
+        await msg.edit(content="Finished")
 
     @bot.slash_command(
         name="topg",
@@ -714,7 +736,7 @@ if __name__ == "__main__":
         guild_ids=testing_servers,
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     async def help_admin(ctx):
         if ctx.channel.id == int(CHANNEL):
             # Sends the help message to the channel
@@ -761,7 +783,7 @@ if __name__ == "__main__":
         description="Resets the score of a user",
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     async def reset_points(
             ctx, 
             reset_user_points: Option(str, "The user to reset the score of", required=True)
@@ -808,7 +830,7 @@ if __name__ == "__main__":
         guild_ids = testing_servers,
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     async def add_points(
         ctx,
         add_user_points: Option(str, "The user to add points to", required=True),
@@ -889,7 +911,7 @@ if __name__ == "__main__":
         description="Resets the leaderboard",
         guild_ids = testing_servers,
     )
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
     async def reset_leaderboard(ctx):
         if ctx.channel.id == int(CHANNEL):
@@ -920,7 +942,7 @@ if __name__ == "__main__":
         guild_ids=testing_servers,
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     async def settopg(ctx, top_g_user: Option(str, "The user to set as the TOP G OF THE MONTH", required=True)):
         if ctx.channel.id == int(CHANNEL):
             user = await bot.fetch_user(int(top_g_user[2:-1]))
@@ -965,7 +987,7 @@ if __name__ == "__main__":
         guild_ids=testing_servers,
     )
     @commands.cooldown(1, COOLDOWN, commands.BucketType.user)
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(kick_members=True)
     async def remove_points(
         ctx,
         remove_user_points: Option(str, "The user to remove points from", required=True),
